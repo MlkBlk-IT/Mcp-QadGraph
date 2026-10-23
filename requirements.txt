@@ -1,0 +1,3 @@
+# Dashboard (qadgraph/server.py) : stdlib uniquement, rien a installer.
+# Serveur MCP (qadgraph/mcp/qadgraph_mcp.py) : FastMCP
+mcp

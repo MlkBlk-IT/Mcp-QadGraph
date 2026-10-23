@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QadGraph — Qdrant Control Plane</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071120'/%3E%3Cpath d='M32 12 50 22v20L32 52 14 42V22z' fill='none' stroke='%2322d3ee' stroke-width='5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/styles.css">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-octree/dist/d3-octree.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-force-3d@3.0.6/dist/d3-force-3d.min.js"></script>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow a"></div>
+<div class="bg-glow b"></div>
+<div class="bg-glow c"></div>
+<div class="bg-noise"></div>
+
+<div id="app">
+
+  <!-- ============================================ SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.3 7 12 12 20.7 7"/>
+        </svg>
+      </div>
+      <div>
+        <h1>QadGraph</h1>
+        <div class="sub" id="brand-collection">qdrant control plane</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Explorer</div>
+    <div class="nav-item active" data-view="topology">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="16" r="2"/><circle cx="4" cy="16" r="2"/><path d="M12 6v3M14.5 13.5 18 14.8M9.5 13.5 6 14.8"/></svg>
+      Vector Topology
+    </div>
+    <div class="nav-item" data-view="collections">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+      Collections
+      <span class="badge" id="badge-collections">—</span>
+    </div>
+    <div class="nav-item" data-view="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Similarity Search
+    </div>
+
+    <div class="nav-label">Systems</div>
+    <div class="nav-item" data-view="metrics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/></svg>
+      Metrics
+    </div>
+    <div class="nav-item" data-view="logs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg>
+      Logs
+    </div>
+    <div class="nav-item" data-view="config">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Config
+    </div>
+
+    <div class="side-foot">
+      <div><span class="dot" id="status-dot"></span><span id="status-text">connexion…</span></div>
+      <div id="status-meta">qdrant —</div>
+      <div id="status-latency">—</div>
+    </div>
+  </aside>
+
+  <!-- ============================================ WORKSPACE -->
+  <main id="workspace">
+    <header id="topbar">
+      <div class="kpi c"><span class="v" id="k-points">—</span><span class="l">Points</span></div>
+      <div class="kpi v"><span class="v" id="k-dims">—</span><span class="l">Dimensions</span></div>
+      <div class="kpi b"><span class="v" id="k-distance">—</span><span class="l">Distance</span></div>
+      <div class="kpi e"><span class="v" id="k-edges">—</span><span class="l">Edges</span></div>
+      <div class="kpi a"><span class="v" id="k-degree">—</span><span class="l">Degré moyen</span></div>
+      <div class="kpi r"><span class="v" id="k-indexed">—</span><span class="l">Indexés</span></div>
+      <div class="kpi"><span class="v" id="k-refresh">—</span><span class="l">Refresh</span></div>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-refresh" title="Rafraîchir les données (R)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        Force Sync
+      </button>
+    </header>
+
+    <div id="views">
+
+      <!-- ---------- VIEW : topology ---------- -->
+      <section class="view active" data-view="topology">
+        <div id="graph-wrap" class="card">
+          <canvas id="graph-canvas"></canvas>
+          <div class="graph-hud" id="graph-hud">initialisation…</div>
+          <div class="graph-tools">
+            <button class="btn on" id="btn-spin" title="Rotation automatique (E)">Spin</button>
+            <button class="btn on" id="btn-3d" title="Bascule 3D / 2D (B)">3D</button>
+            <button class="btn on" id="btn-labels" title="Labels (L)">Labels</button>
+            <button class="btn on" id="btn-edges" title="Edges (D)">Edges</button>
+            <span style="height:1px;background:var(--line);width:100%;margin:3px 0"></span>
+            <button class="btn" id="btn-fit" title="Recadrer (F)">Center</button>
+            <button class="btn" id="btn-zoom-in" title="Zoom +">+</button>
+            <button class="btn" id="btn-zoom-out" title="Zoom −">−</button>
+            <button class="btn" id="btn-unpin" title="Libérer les nœuds (U)">Unpin</button>
+            <button class="btn" id="btn-help" title="Raccourcis (?)">?</button>
+          </div>
+          <div class="graph-ctl">
+            <div style="display:flex;align-items:center;gap:9px">
+              <label>Seuil cosine</label>
+              <input type="range" id="threshold" min="0.50" max="0.95" step="0.01" value="0.65">
+              <span class="val" id="threshold-val">0.65</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px">
+              <label>Rotation</label>
+              <input type="range" id="spin-speed" min="0" max="100" step="1" value="35">
+              <span class="val" id="spin-val">0.35</span>
+            </div>
+            <div class="legend" id="graph-legend"></div>
+          </div>
+          <div class="help" id="help">
+            <div class="card help-card">
+              <h2>Navigation de la sphère</h2>
+              <div class="help-grid">
+                <kbd>Glisser</kbd><span>Faire tourner la sphère (orbite libre)</span>
+                <kbd>Molette</kbd><span>Zoom avant / arrière</span>
+                <kbd>Maj + Glisser</kbd><span>Déplacer le plan de vue</span>
+                <kbd>Clic</kbd><span>Sélectionner un nœud et ouvrir sa fiche</span>
+                <kbd>Double-clic</kbd><span>Libérer un nœud épinglé</span>
+                <kbd>E</kbd><span>Rotation automatique on / off</span>
+                <kbd>B</kbd><span>Bascule 3D / 2D</span>
+                <kbd>L</kbd><span>Labels</span>
+                <kbd>D</kbd><span>Edges</span>
+                <kbd>F</kbd><span>Recadrer la sphère</span>
+                <kbd>U</kbd><span>Libérer tous les nœuds</span>
+                <kbd>/</kbd><span>Recherche</span>
+                <kbd>1…6</kbd><span>Changer de vue</span>
+              </div>
+              <div class="help-foot">Cliquer sur le panneau d’aide ou appuyer sur Échap pour fermer.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- VIEW : collections ---------- -->
+      <section class="view" data-view="collections">
+        <div class="grid g4" id="coll-stats"></div>
+        <div class="card">
+          <div class="card-head"><h3>Collections Qdrant</h3><span class="hint" id="coll-hint">—</span></div>
+          <div class="card-body tbl-scroll" style="max-height:none">
+            <table class="tbl" id="coll-table">
+              <thead><tr>
+                <th>Collection</th><th>Statut</th><th style="text-align:right">Points</th>
+                <th style="text-align:right">Indexés</th><th style="text-align:right">Segments</th>
+                <th style="text-align:right">Dims</th><th>Distance</th><th>Optimizer</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Schéma de payload</h3><span class="hint">couverture par champ</span></div>
+          <div class="card-body tbl-scroll">
+            <table class="tbl" id="schema-table">
+              <thead><tr><th>Champ</th><th>Type</th><th style="text-align:right">Points</th><th style="text-align:right">Couverture</th><th>Couverture visuelle</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- VIEW : search ---------- -->
+      <section class="view" data-view="search">
+        <div class="searchbar">
+          <input type="text" id="search-input" placeholder="Rechercher dans la mémoire vectorielle…  ( / )" autocomplete="off">
+          <button class="btn primary" id="btn-search">Rechercher</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Résultats</h3><span class="hint" id="search-hint">—</span></div>
+          <div class="card-body" id="search-results"></div>
+        </div>
+      </section>
+
+      <!-- ---------- VIEW : metrics ---------- -->
+      <section class="view" data-view="metrics">
+        <div class="grid g4" id="metric-tiles"></div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><h3>Distribution des similarités</h3><span class="hint">cosine</span></div>
+            <div class="card-body"><canvas id="chart-sim" height="210"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Répartition par type</h3><span class="hint">payload.type</span></div>
+            <div class="card-body"><canvas id="chart-type" height="210"></canvas></div>
+          </div>
+        </div>
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><h3>Top nœuds connectés</h3><span class="hint">degré</span></div>
+            <div class="card-body tbl-scroll">
+              <table class="tbl" id="top-table">
+                <thead><tr><th>#</th><th>Type</th><th>Extrait</th><th style="text-align:right">Degré</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Sessions récentes</h3><span class="hint">par nombre de points</span></div>
+            <div class="card-body tbl-scroll">
+              <table class="tbl" id="session-table">
+                <thead><tr><th>Session</th><th style="text-align:right">Points</th><th style="text-align:right">Part</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Paramètres de la collection</h3><span class="hint">Qdrant</span></div>
+          <div class="card-body"><pre class="code" id="coll-config">—</pre></div>
+        </div>
+      </section>
+
+      <!-- ---------- VIEW : logs ---------- -->
+      <section class="view" data-view="logs">
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><h3>stdout</h3><span class="hint" id="logs-hint">—</span></div>
+            <div class="card-body" style="max-height:460px;overflow:auto" id="logs-out"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>stderr</h3><span class="hint">qdrant.stderr.log</span></div>
+            <div class="card-body" style="max-height:460px;overflow:auto" id="logs-err"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- VIEW : config ---------- -->
+      <section class="view" data-view="config">
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-head"><h3>Connexion MCP</h3><span class="hint">à coller dans votre client</span></div>
+            <div class="card-body">
+              <pre class="code" id="mcp-config">—</pre>
+              <div style="margin-top:12px;display:flex;gap:8px">
+                <button class="btn" id="btn-copy-mcp">Copier la config MCP</button>
+                <button class="btn" id="btn-copy-mcp-win">Copier (format Windows)</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Serveur</h3><span class="hint">QadGraph</span></div>
+            <div class="card-body"><pre class="code" id="server-config">—</pre></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Qdrant config.yaml</h3><span class="hint" id="qdrant-config-path">—</span></div>
+          <div class="card-body"><pre class="code" id="qdrant-config">—</pre></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============================================ RIGHT PANEL -->
+  <aside id="panel">
+    <div class="panel-head">
+      <h3 id="panel-title">Recent Entries</h3>
+      <span class="live"><span class="dot ok"></span><span id="panel-live">live</span></span>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </aside>
+
+</div>
+
+<div id="tooltip"></div>
+<div id="toast"></div>
+<script src="/assets/app.js"></script>
+</body>
+</html>

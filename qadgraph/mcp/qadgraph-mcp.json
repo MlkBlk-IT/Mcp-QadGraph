@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "qadgraph": {
+      "command": "C:\\AI\\EmbeddingDB\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\AI\\EmbeddingDB\\migration-qdrant\\qadgraph\\mcp\\qadgraph_mcp.py"
+      ],
+      "env": {
+        "QADGRAPH_QDRANT": "http://127.0.0.1:6333",
+        "QADGRAPH_COLLECTION": "hermes_qwen3_memory",
+        "QADGRAPH_DASHBOARD": "http://127.0.0.1:8766/"
+      }
+    }
+  }
+}

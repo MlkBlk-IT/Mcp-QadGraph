@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+logs/
+*.log
+points_cache.json
+qdrant/
+storage/
+.env
