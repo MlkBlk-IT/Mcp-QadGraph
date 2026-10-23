@@ -1,160 +1,177 @@
-# 🕸️ QadGraph — Plan de contrôle Qdrant
+<div align="center">
 
-> **« Voir la mémoire vectorielle, pas seulement l'interroger. »**
-> Dashboard local (sphère 3D de similarité) + serveur MCP pour une base [Qdrant](https://qdrant.tech).
-> Python **stdlib** côté serveur · 100 % local · 0 API payante · 0 Docker.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=Mcp-QadGraph&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Qdrant%20control%20plane%20%E2%80%94%203D%20similarity%20dashboard%20%2B%20read-only%20MCP%20server&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="Mcp-QadGraph" />
 
----
+<img src="https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=0d0d0d&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Python%20stdlib-3776ab?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Qdrant-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/100%25%20local%20%C2%B7%200%20paid%20API%20%C2%B7%200%20Docker-00ff9c?style=for-the-badge&labelColor=0d0d0d" />
 
-## Le problème
+</div>
 
-Une collection Qdrant, c'est des milliers de vecteurs illisibles. L'UI native montre le voisinage d'un
-point, pas la **forme globale** de la mémoire : doublons, clusters, nœuds-hubs, distribution des types.
-
-QadGraph calcule la similarité cosine **côté serveur**, met le résultat en cache, et sert :
-
-- un **dashboard** (graphe 3D, métriques, recherche, logs, config) ;
-- un **serveur MCP** : n'importe quel agent (Claude Desktop, Codex, kimi…) inspecte la mémoire en lecture seule.
+> **"See the vector memory, don't just query it."**
+> Local dashboard (3D similarity sphere) + MCP server for a [Qdrant](https://qdrant.tech) database.
+> Python **stdlib** on the server side · 100% local · 0 paid API · 0 Docker.
 
 ---
 
-## État actuel
+## The problem
 
-**v0.1.1 — fonctionnel sur Qdrant local, pas encore généralisé. Correctif de sécurité (CORS, proxy, SSRF).**
+A Qdrant collection is thousands of unreadable vectors. The native UI shows the neighborhood
+of one point, not the **global shape** of the memory: duplicates, clusters, hub nodes, type
+distribution.
 
-- Vérifié à l'exécution (2026-10-22, Windows, Python 3.14, Qdrant 1.19.2) : les 9 routes principales du dashboard répondent `200`, `/api/health` renvoie `qdrant: up`.
-- **Tests automatisés limités à la sécurité du dashboard** : `tests/test_security.py` (stdlib, sans Qdrant) ; `python -m unittest discover -s tests -v`.
-- **Pas de benchmark de performance** : le calcul cosine est en Python pur, O(n²·dimension), donc plafonné (voir Limites).
-- Testé uniquement sur Windows. Le support Linux/macOS n'est pas vérifié.
-- Couplé à Qdrant et au schéma de payload de la mémoire d'un agent (champs `type`, `session`, `text`/`summary`). Voir *Limites connues*.
+QadGraph computes cosine similarity **server-side**, caches the result, and serves:
+
+- a **dashboard** (3D graph, metrics, search, logs, config);
+- an **MCP server**: any agent (Claude Desktop, Codex, kimi…) inspects the memory read-only.
 
 ---
 
-## Démarrage rapide
+## Current state
 
-Prérequis : Qdrant qui tourne sur `http://127.0.0.1:6333`, Python 3.8+ annoncé (testé sur 3.14).
+**v0.1.1 — working on local Qdrant, not yet generalized. Security fixes (CORS, proxy, SSRF).**
+
+- Verified at runtime (2026-10-22, Windows, Python 3.14, Qdrant 1.19.2): all 9 main dashboard routes answer `200`, `/api/health` returns `qdrant: up`.
+- **Automated tests limited to dashboard security**: `tests/test_security.py` (stdlib, without Qdrant); `python -m unittest discover -s tests -v`.
+- **No performance benchmark**: cosine computation is pure Python, O(n²·dimension), therefore capped (see Limitations).
+- Only tested on Windows. Linux/macOS support is unverified.
+- Coupled to Qdrant and to an agent memory's payload schema (`type`, `session`, `text`/`summary` fields). See *Known limitations*.
+
+---
+
+## Quick start
+
+Prerequisites: Qdrant running on `http://127.0.0.1:6333`, Python 3.8+ advertised (tested on 3.14).
 
 ```powershell
 git clone https://github.com/MlkBlk-IT/Mcp-QadGraph
 cd Mcp-QadGraph
-$env:QADGRAPH_COLLECTION = "ma_collection"
+$env:QADGRAPH_COLLECTION = "my_collection"
 python qadgraph\server.py        # → http://127.0.0.1:8766/
 ```
 
-Le dashboard n'a **aucune dépendance** à installer. Le front charge D3 depuis un CDN : internet requis pour la vue graphe.
+The dashboard has **zero dependencies** to install. The frontend loads D3 from a CDN: internet is required for the graph view.
 
-### Serveur MCP
+### MCP server
 
 ```json
 {
   "mcpServers": {
     "qadgraph": {
-      "command": "<PYTHON_AVEC_MCP>",
-      "args": ["<CHEMIN_DU_DEPOT>/qadgraph/mcp/qadgraph_mcp.py"],
+      "command": "<PYTHON_WITH_MCP>",
+      "args": ["<REPO_PATH>/qadgraph/mcp/qadgraph_mcp.py"],
       "env": {
         "QADGRAPH_QDRANT": "http://127.0.0.1:6333",
-        "QADGRAPH_COLLECTION": "ma_collection"
+        "QADGRAPH_COLLECTION": "my_collection"
       }
     }
   }
 }
 ```
 
-Le serveur MCP nécessite le paquet `mcp` (FastMCP) : `pip install -r requirements.txt` dans le Python utilisé.
+The MCP server requires the `mcp` package (FastMCP): `pip install -r requirements.txt` in the Python used.
 
 ---
 
 ## Architecture
 
 ```
-Client MCP / navigateur
+MCP client / browser
    │                         │
    ▼                         ▼
-qadgraph/mcp/qadgraph_mcp.py     qadgraph/web/  (UI 3D, app.js)
-   │  importe                       │  HTTP
-   ▼                                ▼
-qadgraph/server.py   ← Store + cache + cosine côté serveur + API HTTP (:8766)
+qadgraph/mcp/qadgraph_mcp.py     qadgraph/web/  (3D UI, app.js)
+   │  imports                     │  HTTP
+   ▼                              ▼
+qadgraph/server.py   ← Store + cache + server-side cosine + HTTP API (:8766)
    │  HTTP JSON
    ▼
 Qdrant (:6333)  — /collections, points/scroll
 ```
 
-Le navigateur reçoit une topologie légère (nœuds + arêtes), jamais les vecteurs bruts.
+The browser receives a lightweight topology (nodes + edges), never the raw vectors.
 
-| Fichier | Rôle |
-|---------|------|
-| `qadgraph/server.py` | Moteur (Store, cache, similarité, métriques) + serveur HTTP stdlib |
-| `qadgraph/mcp/qadgraph_mcp.py` | Serveur FastMCP, 9 outils, réutilise le moteur de `server.py` |
-| `qadgraph/web/` | Front : `index.html`, `app.js`, `styles.css` |
-| `docs/REFERENCE.md` | Référence détaillée : routes, variables, gestes de navigation |
-| `PROGRESS.md` | Journal de chantier |
+| File | Role |
+|------|------|
+| `qadgraph/server.py` | Engine (Store, cache, similarity, metrics) + stdlib HTTP server |
+| `qadgraph/mcp/qadgraph_mcp.py` | FastMCP server, 9 tools, reuses the `server.py` engine |
+| `qadgraph/web/` | Frontend: `index.html`, `app.js`, `styles.css` |
+| `docs/REFERENCE.md` | Detailed reference: routes, variables, navigation gestures |
+| `PROGRESS.md` | Build journal |
 
 ---
 
-## Outils MCP exposés (9)
+## Exposed MCP tools (9)
 
-| Outil | Rôle |
+| Tool | Role |
 |-------|------|
-| `qadgraph_status` | État du serveur, de Qdrant et de la collection |
-| `qadgraph_metrics` | Métriques complètes (graphe, distributions, schéma) |
-| `qadgraph_collections` | Toutes les collections + métriques |
-| `qadgraph_search` | Recherche cosine dans la mémoire |
-| `qadgraph_recent` | Entrées récentes |
-| `qadgraph_topology` | Stats du graphe + nœuds les plus connectés |
-| `qadgraph_point` | Payload complet d'un point + 8 voisins proches |
-| `qadgraph_logs` | Queue des journaux Qdrant |
-| `qadgraph_dashboard` | URL du dashboard et commandes de démarrage |
+| `qadgraph_status` | Server, Qdrant and collection status |
+| `qadgraph_metrics` | Full metrics (graph, distributions, schema) |
+| `qadgraph_collections` | All collections + metrics |
+| `qadgraph_search` | Cosine search across the memory |
+| `qadgraph_recent` | Recent entries |
+| `qadgraph_topology` | Graph stats + most connected nodes |
+| `qadgraph_point` | Full payload of a point + 8 nearest neighbors |
+| `qadgraph_logs` | Qdrant log queue |
+| `qadgraph_dashboard` | Dashboard URL and startup commands |
 
-Tous les outils sont en **lecture seule**.
-
----
-
-## Configuration (variables d'environnement)
-
-| Variable | Défaut | Rôle |
-|----------|--------|------|
-| `QADGRAPH_QDRANT` | `http://127.0.0.1:6333` | URL de Qdrant |
-| `QADGRAPH_COLLECTION` | `hermes_qwen3_memory` | Collection analysée (**à changer**) |
-| `QADGRAPH_HOST` | `127.0.0.1` | Interface d'écoute |
-| `QADGRAPH_PORT` | `8766` | Port du dashboard |
-| `QADGRAPH_CACHE_TTL` | `45` | Secondes entre deux rafraîchissements |
-| `QADGRAPH_MAX_MATRIX` | `500` | Taille max de la matrice de similarité |
-| `QADGRAPH_MAX_EDGES` | `4000` | Arêtes max renvoyées |
-| `QADGRAPH_DASHBOARD` | `http://127.0.0.1:8766/` | URL annoncée par le MCP |
-| `QADGRAPH_ALLOWED_HOSTS` | *(vide)* | Hôtes supplémentaires acceptés dans l'en-tête `Host` (ex. `monpc:8766`) |
+All tools are **read-only**.
 
 ---
 
-## Limites connues
+## Configuration (environment variables)
 
-**Sécurité**
-
-- **Corrigé en v0.1.1 — CORS / CSRF / DNS rebinding.** Le serveur n'envoie plus `Access-Control-Allow-Origin: *`, et refuse (`403`) toute requête dont le `Host` ou l'`Origin` n'est pas celui du dashboard (`127.0.0.1`, `localhost`, `[::1]` + le port, plus `QADGRAPH_ALLOWED_HOSTS`). Les preflights `OPTIONS` sont refusés (`405`).
-- **Corrigé en v0.1.1 — proxy en lecture seule.** `POST /api/qdrant/proxy` n'accepte que `search`, `scroll`, `count`, `query`, `recommend`, `discover` et `facet`. Avant le correctif, un `POST` vers `/collections/<nom>/points/delete` était relayé à Qdrant (reproduit par un test).
-- **Corrigé en v0.1.1 — chemins du proxy.** Les chemins doivent être relatifs (`/...`) : plus de `@hote`, `//hote` ni `..`.
-- **Reste ouvert :** aucune authentification ; `/api/config` renvoie le `config.yaml` de Qdrant s'il existe (il peut contenir une clé API) à tout processus local qui atteint le port. **Ne pas lancer avec `QADGRAPH_HOST` autre que `127.0.0.1`.**
-
-**Fonctionnel**
-
-- **Qdrant uniquement.** Le couplage est localisé dans `Store.refresh`, `Store._scroll` et `qadgraph_logs`, mais aucun autre backend n'est implémenté.
-- **Schéma de payload attendu** : `type`, `session`, `text` (ou `summary`). Sur une autre collection, ces champs seront `unknown` / vides.
-- Matrice de similarité plafonnée à `QADGRAPH_MAX_MATRIX` points (500) ; au-delà, seules les métriques ponctuelles restent disponibles. Calcul en Python pur : CPU-bound.
-- Les logs (`/api/logs`, `qadgraph_logs`) lisent `logs/qdrant.stdout.log` et `logs/qdrant.stderr.log` **à la racine du dépôt**. Absents par défaut : la vue Logs sera vide.
-- Des exemples de configuration (docstring du MCP, `qadgraph-mcp.json`, `/api/config`, `docs/REFERENCE.md`, `PROGRESS.md`) contiennent des **chemins Windows de l'auteur** (`C:\AI\EmbeddingDB\...`) : à adapter. Le code, lui, résout ses chemins via `__file__`.
-- Pas de CI, pas d'authentification, pas de tests fonctionnels hors sécurité.
+| Variable | Default | Role |
+|----------|---------|------|
+| `QADGRAPH_QDRANT` | `http://127.0.0.1:6333` | Qdrant URL |
+| `QADGRAPH_COLLECTION` | `hermes_qwen3_memory` | Collection analyzed (**change this**) |
+| `QADGRAPH_HOST` | `127.0.0.1` | Listen interface |
+| `QADGRAPH_PORT` | `8766` | Dashboard port |
+| `QADGRAPH_CACHE_TTL` | `45` | Seconds between two refreshes |
+| `QADGRAPH_MAX_MATRIX` | `500` | Max similarity matrix size |
+| `QADGRAPH_MAX_EDGES` | `4000` | Max edges returned |
+| `QADGRAPH_DASHBOARD` | `http://127.0.0.1:8766/` | URL announced by the MCP |
+| `QADGRAPH_ALLOWED_HOSTS` | *(empty)* | Extra hosts accepted in the `Host` header (e.g. `mypc:8766`) |
 
 ---
 
-## Méthodologie
+## Known limitations
 
-- **Lecture seule** : le MCP n'écrit jamais dans Qdrant.
-- **Calcul côté serveur** : le navigateur reçoit ~40 Ko de topologie, pas 6 Mo de vecteurs.
-- **stdlib only** pour le dashboard : démarre sous n'importe quel Python sans installation.
-- **Portable par construction** : aucun SDK propriétaire, aucune API payante, 100 % CPU.
+**Security**
+
+- **Fixed in v0.1.1 — CORS / CSRF / DNS rebinding.** The server no longer sends `Access-Control-Allow-Origin: *`, and rejects (`403`) any request whose `Host` or `Origin` is not the dashboard's (`127.0.0.1`, `localhost`, `[::1]` + port, plus `QADGRAPH_ALLOWED_HOSTS`). `OPTIONS` preflights are refused (`405`).
+- **Fixed in v0.1.1 — read-only proxy.** `POST /api/qdrant/proxy` only accepts `search`, `scroll`, `count`, `query`, `recommend`, `discover` and `facet`. Before the fix, a `POST` to `/collections/<name>/points/delete` was relayed to Qdrant (reproduced by a test).
+- **Fixed in v0.1.1 — proxy paths.** Paths must be relative (`/...`): no more `@host`, `//host` or `..`.
+- **Still open:** no authentication; `/api/config` returns Qdrant's `config.yaml` if it exists (it may contain an API key) to any local process reaching the port. **Do not run with `QADGRAPH_HOST` other than `127.0.0.1`.**
+
+**Functional**
+
+- **Qdrant only.** The coupling lives in `Store.refresh`, `Store._scroll` and `qadgraph_logs`, but no other backend is implemented.
+- **Expected payload schema**: `type`, `session`, `text` (or `summary`). On another collection, these fields will be `unknown` / empty.
+- Similarity matrix capped at `QADGRAPH_MAX_MATRIX` points (500); beyond that, only point metrics remain available. Pure-Python computation: CPU-bound.
+- Logs (`/api/logs`, `qadgraph_logs`) read `logs/qdrant.stdout.log` and `logs/qdrant.stderr.log` **at the repo root**. Absent by default: the Logs view will be empty.
+- Some config examples (MCP docstring, `qadgraph-mcp.json`, `/api/config`, `docs/REFERENCE.md`, `PROGRESS.md`) contain **the author's Windows paths** (`C:\AI\EmbeddingDB\...`): adapt them. The code itself resolves its paths via `__file__`.
+- No CI, no authentication, no functional tests outside security.
 
 ---
 
-## Auteur
+## Methodology
 
-**Malik** — étudiant DEP Soutien Informatique, autodidacte
-Spécialisation : Sysadmin + Cyber + AI + Cloud
+- **Read-only**: the MCP never writes to Qdrant.
+- **Server-side computation**: the browser receives ~40 KB of topology, not 6 MB of vectors.
+- **stdlib only** for the dashboard: starts under any Python with no installation.
+- **Portable by construction**: no proprietary SDK, no paid API, 100% CPU.
+
+---
+
+## Author
+
+**Malik** — IT Support student (DEP), self-taught
+Focus: Sysadmin + Cyber + AI + Cloud
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ff9c,50:03150c,100:e10600&height=100&section=footer" width="100%" alt="" />
+
+**⚡ Built on CPU. Proven on disk. ⚡**
+
+</div>
