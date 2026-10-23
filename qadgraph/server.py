@@ -28,8 +28,8 @@ GET  /api/metrics               -> tableau de bord de metriques agrege
 GET  /api/recent?limit=..       -> entrees recentes
 GET  /api/logs?tail=..&stream=. -> queue des journaux Qdrant
 GET  /api/config                -> config Qdrant + config MCP prete a coller
-GET  /api/qdrant/proxy?path=..  -> proxy GET vers Qdrant
-POST /api/qdrant/proxy          -> proxy POST (path dans le corps ou la query)
+GET  /api/qdrant/proxy?path=..  -> proxy GET vers Qdrant (chemin relatif valide)
+POST /api/qdrant/proxy          -> proxy POST LECTURE SEULE (search/scroll/count/query/...)
 """
 import json
 import operator
@@ -57,6 +57,24 @@ PORT = int(os.environ.get("QADGRAPH_PORT", "8766"))
 CACHE_TTL = float(os.environ.get("QADGRAPH_CACHE_TTL", "45"))
 MAX_MATRIX_N = int(os.environ.get("QADGRAPH_MAX_MATRIX", "500"))
 MAX_EDGES = int(os.environ.get("QADGRAPH_MAX_EDGES", "4000"))
+
+# --- securite : le dashboard ne parle qu'a lui-meme (anti CSRF / DNS rebinding) ---
+ALLOWED_HOSTS = {"127.0.0.1:%d" % PORT, "localhost:%d" % PORT, "[::1]:%d" % PORT,
+                 "%s:%d" % (HOST, PORT)}
+ALLOWED_HOSTS.update(h.strip().lower() for h in
+                     os.environ.get("QADGRAPH_ALLOWED_HOSTS", "").split(",") if h.strip())
+ALLOWED_ORIGINS = {"http://" + h for h in ALLOWED_HOSTS}
+# proxy POST en lecture seule : seules ces routes Qdrant (qui ne modifient rien) passent
+PROXY_READ_POST = re.compile(
+    r"^/collections/[^/?#%\s]+/points/"
+    r"(search|scroll|count|query|recommend|discover|facet)(/batch|/groups)?$")
+SAFE_QDRANT_PATH = re.compile(r"^/[A-Za-z0-9_\-./%]*(\?[^\s#@]*)?$")
+
+
+def safe_qdrant_path(p):
+    """Chemin Qdrant relatif seulement (refuse '@hote', '//hote', '..') : evite le SSRF."""
+    return (isinstance(p, str) and len(p) < 512 and ".." not in p
+            and not p.startswith("//") and SAFE_QDRANT_PATH.match(p) is not None)
 
 STARTED = time.time()
 MUL = operator.mul
@@ -517,9 +535,6 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         if cache:
             self.send_header("Cache-Control", cache)
         self.end_headers()
@@ -545,11 +560,26 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
+    def _guard(self):
+        """Anti DNS-rebinding / CSRF : Host et Origin doivent etre ceux du dashboard."""
+        host = (self.headers.get("Host") or "").strip().lower()
+        if host and host not in ALLOWED_HOSTS:
+            self._send(403, {"error": "host refuse"})
+            return False
+        origin = (self.headers.get("Origin") or "").strip().lower()
+        if origin and origin not in ALLOWED_ORIGINS:
+            self._send(403, {"error": "origin refuse"})
+            return False
+        return True
+
     # -- verbs
     def do_OPTIONS(self):
-        self._send(204, b"", "text/plain")
+        # pas de CORS : le dashboard est same-origin, aucune preflight cross-origin autorisee
+        self._send(405, {"error": "CORS desactive"})
 
     def do_GET(self):
+        if not self._guard():
+            return
         path, q = self._query()
         try:
             if path in ("/", "/index.html"):
@@ -661,6 +691,8 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/api/qdrant/proxy":
                 target = (q.get("path") or ["/"])[0]
+                if not safe_qdrant_path(target):
+                    return self._send(400, {"error": "chemin invalide (relatif uniquement)"})
                 status, data = qdrant_get(target)
                 return self._send(status if status else 502, data)
 
@@ -674,6 +706,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(500, {"error": str(e)})
 
     def do_POST(self):
+        if not self._guard():
+            return
         path, q = self._query()
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -684,6 +718,8 @@ class Handler(BaseHTTPRequestHandler):
                 body = {}
             if path == "/api/qdrant/proxy":
                 target = body.get("path") or (q.get("path") or ["/"])[0]
+                if not safe_qdrant_path(target) or not PROXY_READ_POST.match(target.split("?")[0]):
+                    return self._send(403, {"error": "proxy en lecture seule : chemin refuse"})
                 payload = body.get("body", body)
                 if "path" in payload:
                     payload = dict(payload)

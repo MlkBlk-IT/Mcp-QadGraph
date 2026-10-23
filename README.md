@@ -20,10 +20,10 @@ QadGraph calcule la similarité cosine **côté serveur**, met le résultat en c
 
 ## État actuel
 
-**v0.1 — fonctionnel sur Qdrant local, pas encore généralisé.**
+**v0.1.1 — fonctionnel sur Qdrant local, pas encore généralisé. Correctif de sécurité (CORS, proxy, SSRF).**
 
 - Vérifié à l'exécution (2026-10-22, Windows, Python 3.14, Qdrant 1.19.2) : les 9 routes principales du dashboard répondent `200`, `/api/health` renvoie `qdrant: up`.
-- **Aucun test automatisé** dans ce dépôt.
+- **Tests automatisés limités à la sécurité du dashboard** : `tests/test_security.py` (stdlib, sans Qdrant) ; `python -m unittest discover -s tests -v`.
 - **Pas de benchmark de performance** : le calcul cosine est en Python pur, O(n²·dimension), donc plafonné (voir Limites).
 - Testé uniquement sur Windows. Le support Linux/macOS n'est pas vérifié.
 - Couplé à Qdrant et au schéma de payload de la mémoire d'un agent (champs `type`, `session`, `text`/`summary`). Voir *Limites connues*.
@@ -121,14 +121,18 @@ Tous les outils sont en **lecture seule**.
 | `QADGRAPH_MAX_MATRIX` | `500` | Taille max de la matrice de similarité |
 | `QADGRAPH_MAX_EDGES` | `4000` | Arêtes max renvoyées |
 | `QADGRAPH_DASHBOARD` | `http://127.0.0.1:8766/` | URL annoncée par le MCP |
+| `QADGRAPH_ALLOWED_HOSTS` | *(vide)* | Hôtes supplémentaires acceptés dans l'en-tête `Host` (ex. `monpc:8766`) |
 
 ---
 
 ## Limites connues
 
-**Sécurité — à lire avant d'exposer quoi que ce soit**
+**Sécurité**
 
-- Le serveur répond `Access-Control-Allow-Origin: *` et expose `POST /api/qdrant/proxy`, qui relaie **n'importe quel chemin et corps** vers Qdrant, **sans authentification** ni contrôle d'`Origin`. Une page web ouverte dans ton navigateur peut donc, en théorie, écrire dans ta base via `127.0.0.1:8766`. Non exploité ici, mais non corrigé : **ne pas lancer avec `QADGRAPH_HOST` autre que `127.0.0.1`**, et corriger (CORS restreint, proxy en lecture seule) avant toute exposition.
+- **Corrigé en v0.1.1 — CORS / CSRF / DNS rebinding.** Le serveur n'envoie plus `Access-Control-Allow-Origin: *`, et refuse (`403`) toute requête dont le `Host` ou l'`Origin` n'est pas celui du dashboard (`127.0.0.1`, `localhost`, `[::1]` + le port, plus `QADGRAPH_ALLOWED_HOSTS`). Les preflights `OPTIONS` sont refusés (`405`).
+- **Corrigé en v0.1.1 — proxy en lecture seule.** `POST /api/qdrant/proxy` n'accepte que `search`, `scroll`, `count`, `query`, `recommend`, `discover` et `facet`. Avant le correctif, un `POST` vers `/collections/<nom>/points/delete` était relayé à Qdrant (reproduit par un test).
+- **Corrigé en v0.1.1 — chemins du proxy.** Les chemins doivent être relatifs (`/...`) : plus de `@hote`, `//hote` ni `..`.
+- **Reste ouvert :** aucune authentification ; `/api/config` renvoie le `config.yaml` de Qdrant s'il existe (il peut contenir une clé API) à tout processus local qui atteint le port. **Ne pas lancer avec `QADGRAPH_HOST` autre que `127.0.0.1`.**
 
 **Fonctionnel**
 
@@ -137,7 +141,7 @@ Tous les outils sont en **lecture seule**.
 - Matrice de similarité plafonnée à `QADGRAPH_MAX_MATRIX` points (500) ; au-delà, seules les métriques ponctuelles restent disponibles. Calcul en Python pur : CPU-bound.
 - Les logs (`/api/logs`, `qadgraph_logs`) lisent `logs/qdrant.stdout.log` et `logs/qdrant.stderr.log` **à la racine du dépôt**. Absents par défaut : la vue Logs sera vide.
 - Des exemples de configuration (docstring du MCP, `qadgraph-mcp.json`, `/api/config`, `docs/REFERENCE.md`, `PROGRESS.md`) contiennent des **chemins Windows de l'auteur** (`C:\AI\EmbeddingDB\...`) : à adapter. Le code, lui, résout ses chemins via `__file__`.
-- Pas de tests, pas de CI, pas d'authentification.
+- Pas de CI, pas d'authentification, pas de tests fonctionnels hors sécurité.
 
 ---
 

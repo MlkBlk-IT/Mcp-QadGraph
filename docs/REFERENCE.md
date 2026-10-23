@@ -61,7 +61,7 @@ planifiée** `Hermes Qdrant Tray`. Ce fichier délègue au serveur du dossier
 | `/api/config` | GET | config Qdrant + config serveur + config MCP |
 | `/api/refresh` | GET/POST | force un rechargement du cache |
 | `/api/qdrant/proxy?path=` | GET | proxy vers Qdrant |
-| `/api/qdrant/proxy` | POST | proxy POST (`{path, body}`) |
+| `/api/qdrant/proxy` | POST | proxy POST **lecture seule** (`{path, body}` ; `search`, `scroll`, `count`, `query`, `recommend`, `discover`, `facet`) |
 
 ---
 
