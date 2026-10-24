@@ -1,3 +1,5 @@
+> ⚠️ **Note:** The rest of this repository (code, comments, scripts, docs, commits, issues) is written in **French**. Only this README is in English.
+
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=Mcp-QadGraph&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Qdrant%20control%20plane%20%E2%80%94%203D%20similarity%20dashboard%20%2B%20read-only%20MCP%20server&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="Mcp-QadGraph" />
