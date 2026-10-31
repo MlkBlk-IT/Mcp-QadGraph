@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=Mcp-QadGraph&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Qdrant%20control%20plane%20%E2%80%94%203D%20similarity%20dashboard%20%2B%20read-only%20MCP%20server&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="Mcp-QadGraph" />
+<p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/Mcp-QadGraph/main/docs/readme-header.svg" width="100%" alt="Mcp-QadGraph visual header" /></p>
 
 <img src="https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=0d0d0d&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Python%20stdlib-3776ab?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Qdrant-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/100%25%20local%20%C2%B7%200%20paid%20API%20%C2%B7%200%20Docker-00ff9c?style=for-the-badge&labelColor=0d0d0d" />
 
