@@ -168,6 +168,11 @@ All tools are **read-only**.
 **Malik** — IT Support student (DEP), self-taught
 Focus: Sysadmin + Cyber + AI + Cloud
 
+
+## Ownership and license
+
+[Project origin and evidence](PROJECT-ORIGIN.md) · [License](LICENSE)
+
 ---
 
 <div align="center">
