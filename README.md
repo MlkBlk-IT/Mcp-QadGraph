@@ -4,7 +4,7 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/Mcp-QadGraph/main/docs/mlkblk-banner-v2.svg" width="100%" alt="Mcp-QadGraph — Malik Belkacemi · MLKBLK-IT" /></p>
 
-<img src="https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=0d0a2b&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/Python%20stdlib-3776ab?style=for-the-badge&logo=python&logoColor=white&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/Qdrant-ff5fa2?style=for-the-badge&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/100%25%20local%20%C2%B7%200%20paid%20API%20%C2%B7%200%20Docker-2de2ff?style=for-the-badge&labelColor=0d0a2b" />
+<img src="https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=0b1f4d&labelColor=0b1f4d" /> <img src="https://img.shields.io/badge/Python%20stdlib-3776ab?style=for-the-badge&logo=python&logoColor=white&labelColor=0b1f4d" /> <img src="https://img.shields.io/badge/Qdrant-ea4335?style=for-the-badge&labelColor=0b1f4d" /> <img src="https://img.shields.io/badge/100%25%20local%20%C2%B7%200%20paid%20API%20%C2%B7%200%20Docker-4285f4?style=for-the-badge&labelColor=0b1f4d" />
 
 </div>
 
@@ -177,7 +177,7 @@ Focus: Sysadmin + Cyber + AI + Cloud
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:2de2ff,50:0d0a2b,100:ff5fa2&height=100&section=footer" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:4285f4,33:ea4335,66:fbbc04,100:34a853&height=100&section=footer" width="100%" alt="" />
 
 **⚡ Built on CPU. Proven on disk. ⚡**
 
