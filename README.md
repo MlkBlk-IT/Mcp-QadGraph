@@ -11,6 +11,13 @@
 > **"See the vector memory, don't just query it."**
 > Local dashboard (3D similarity sphere) + MCP server for a [Qdrant](https://qdrant.tech) database.
 > Python **stdlib** on the server side · 100% local · 0 paid API · 0 Docker.
+## At a glance
+
+| | |
+|---|---|
+| **What it is** | A local dashboard (**3D similarity sphere**) + an MCP server over a **Qdrant** database. |
+| **Stack** | JavaScript front · Python **stdlib** server · Qdrant · 100 % local · 0 paid API · 0 Docker |
+| **Tools** | 9 MCP tools — see *Exposed MCP tools (9)* |
 
 ---
 
